@@ -2,7 +2,7 @@
 with open("aliceinwonderland.txt", encoding="utf-8") as f:
     text = f.read()
 
-#text = text[:500]
+text = text[:500]
 #text = "the abc is a test."
 input_text = input("Enter your text: ")
 special = ("! ( ) - [ ] { } ; : \' \" — \u2014 \u201c \u2019 , < > . / ? @ # $ % ^ & * _ ~")
@@ -19,18 +19,21 @@ input_token = []
 
 def text_splice(text: list):
     text_list = [] 
+    
     for t in text:
         w = ''
+        text_nest = []
         for letter in t:
-                if letter.lower() in special:
-                    if w != '':
-                        text_list.append(w)                      
-                    text_list.append(letter)
-                    w = ''
-                elif letter.lower() in alphabet and w != '-':
-                    w += letter
+            if letter.lower() in special:
+                if w != '':
+                    text_nest.append(w)                      
+                text_nest.append(letter)
+                w = ''
+            elif letter.lower() in alphabet and w != '-':
+                w += letter
         if w != '':
-            text_list.append(w)
+            text_nest.append(w)
+        text_list.append(text_nest)
     return text_list
 
 def rm_duplicates(list: list):
@@ -43,24 +46,6 @@ def rm_duplicates(list: list):
                     temp_list[j] = ''
     temp_list = [t for t in temp_list if t != '']
     return temp_list
-
-def special_formating(list: list):
-    for word in list:
-        special_word = []
-        for i, letter in enumerate(word):
-            if letter not in special:
-                special_word.append(letter)
-            else:
-                if i > 0:
-                        letter = "<spc>" + letter
-                if i < len(word) - 1:
-                        letter += "<spc>"
-                special_word.append(letter)
-        print(''.join(special_word))    
-
-
-  
-                
 
 def encoder(list: list, dict: dict, length: int):
     encoded_list = []
@@ -83,8 +68,16 @@ def decoder(list: list, dict: dict, length: int):
 def heat_map(list: list):
     None
 
+def collapsed_nested_list(nested: list):
+    flat = []
+    for chunk in nested:
+        for token in chunk:
+            flat.append(token)
+    return flat
+
 token_dict = text_splice(word)
 #print("Token Dict: ", token_dict)
+token_dict = collapsed_nested_list(token_dict)
 token_dict = rm_duplicates(token_dict)
 #print("Token Dict after remove_dup: ", token_dict)
 
@@ -101,9 +94,12 @@ for i in range(len(token_dict)):
     
 
 decoder_tokenizer = dict((v, k) for k, v in encoder_tokenizer.items())
-preb = input_splitter
 input_splitter = text_splice(input_splitter)
+print(input_splitter)
+input_splitter = collapsed_nested_list(input_splitter)
+print(input_splitter)
 print(" ".join(input_splitter))
+
 
 input_token = encoder(input_splitter, encoder_tokenizer, len(token_dict))
     
@@ -113,6 +109,6 @@ print("UNK: ", len(token_dict))
 input_token = decoder(input_token, decoder_tokenizer, len(token_dict))
 print(" ".join(input_token))
 
-special_formating(preb)
+
 #print("encoder: ", encoder_tokenizer)
 #print("decoder: ", decoder_tokenizer)
