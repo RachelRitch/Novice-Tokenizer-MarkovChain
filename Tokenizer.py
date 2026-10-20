@@ -4,7 +4,6 @@ alphabet = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n'
 
 def text_splice(text: list):
     text_list = [] 
-    
     for t in text:
         w = ''
         text_nest = []
@@ -21,16 +20,15 @@ def text_splice(text: list):
         text_list.append(text_nest)
     return text_list
 
-def rm_duplicates(list: list):
-    temp_list = list
-    for i in range(len(temp_list)):
-        if temp_list[i] != '':
-            word = temp_list[i]
-            for j in range(len(temp_list)):
-                if word == list[j] and j != i:
-                    temp_list[j] = ''
-    temp_list = [t for t in temp_list if t != '']
-    return temp_list
+def rm_duplicates(training_list: list):
+    for i in range(len(training_list)):
+        if training_list[i] != '':
+            words = training_list[i]
+            for j in range(len(training_list)):
+                if words == list[j] and j != i:
+                    training_list[j] = ''
+    training_list = [t for t in training_list if t != '']
+    return training_list
 
 def encoder(list: list, dict: dict, length: int):
     encoded_list = []
@@ -53,7 +51,7 @@ def decoder(list: list, dict: dict, length: int):
 def heat_map(list: list):
     None
 
-def collapsed_nested_list(nested: list):
+def collapse_nested_list(nested: list):
     flat = []
     for chunk in nested:
         for token in chunk:
@@ -69,47 +67,47 @@ def main():
     #text = "the abc is a test."
     input_text = input("Enter your text: ")
 
-    word = text.split()
+    word_list = text.split()
     input_splitter = input_text.split()
 
-    token_dict = []
+    token_list = []
     token_number = []
     encoder_tokenizer = {}
     decoder_tokenizer = {}
     input_token = []
 
-    token_dict = text_splice(word)
-    #print("Token Dict: ", token_dict)
-    token_dict = collapsed_nested_list(token_dict)
-    token_dict = rm_duplicates(token_dict)
-    #print("Token Dict after remove_dup: ", token_dict)
+    token_list = text_splice(word_list)
+    #print("Token Dict: ", token_list)
+    token_list = collapse_nested_list(token_list)
+    token_list = rm_duplicates(token_list)
+    #print("Token Dict after remove_dup: ", token_list)
 
-    for i in range(len(token_dict)):
+    for i in range(len(token_list)):
         token_number.append(i)
 
     #print(token_number)
     #print(len(token_number))
-    encoder_tokenizer["<unk>"] = (len(token_dict))
-    decoder_tokenizer[(len(token_dict))] = "<unk>"
+    encoder_tokenizer["<unk>"] = (len(token_list))
+    decoder_tokenizer[(len(token_list))] = "<unk>"
 
-    for i in range(len(token_dict)):
-        encoder_tokenizer[token_dict[i]] = token_number[i]
+    for i in range(len(token_list)):
+        encoder_tokenizer[token_list[i]] = token_number[i]
 
 
     decoder_tokenizer = dict((v, k) for k, v in encoder_tokenizer.items())
     input_splitter = text_splice(input_splitter)
     print(input_splitter)
-    input_splitter = collapsed_nested_list(input_splitter)
+    input_splitter = collapse_nested_list(input_splitter)
     print(input_splitter)
     print(" ".join(input_splitter))
 
 
-    input_token = encoder(input_splitter, encoder_tokenizer, len(token_dict))
+    input_token = encoder(input_splitter, encoder_tokenizer, len(token_list))
 
     print(" ".join(str(t) for t in input_token))
-    print("UNK: ", len(token_dict))
+    print("UNK: ", len(token_list))
 
-    input_token = decoder(input_token, decoder_tokenizer, len(token_dict))
+    input_token = decoder(input_token, decoder_tokenizer, len(token_list))
     print(" ".join(input_token))
 
 
