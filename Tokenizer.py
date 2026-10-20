@@ -1,5 +1,6 @@
+import time
 
-symbols = ("! ( ) - [ ] { } ; : \' \" — , < > . / ? @ # $ % ^ & * _ ~")
+symbols = ["!", "(", ")", "-", "[", "]", "{", "}", ";", ":", "\'", "\"", "—", ",", "<", ">", ".", "/", "?", "@", "#", "$", "%", "^", "&", "*", "_", "~"]
 alphabet = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
 special_token = ["<unk>", "<spc>"]
 
@@ -21,25 +22,32 @@ def text_splice(text: list):
         text_list.append(nested_text_list)
     return text_list
 
+def adds_encoder_spacer(nested_list: list):
+    special_index = special_token.index("<spc>")
+    for list in nested_list:
+        j = 0
+        for i in range(len(list[:])):
+            if i < len(list) and i > 0:
+                list.insert(i + j, special_token[special_index])
+                j += 1         
+    return nested_list
+
+def decoder_rm_spacer(output_text: str):
+    special_index = special_token.index("<spc>")
+    special_str = special_token[special_index]
+    while special_str in output_text:
+        output_text = output_text.replace(f' {special_str} ', '')
+    return output_text
+
 def special_token_insert(token_list: list, special_token_list: list):
     return
-
-def rm_duplicates(training_list: list):
-    for i in range(len(training_list)):
-        if training_list[i] != '':
-            words = training_list[i]
-            for j in range(len(training_list)):
-                if words == list[j] and j != i:
-                    training_list[j] = ''
-    training_list = [t for t in training_list if t != '']
-    return training_list
 
 def encoder(list: list, dict: dict):
     encoded_list = []
     for word in list[:]:
         if word in dict:
             encoded_list.append(dict[word])
-        else:
+        elif word not in special_token or word in special_token[0]:
             encoded_list.append(dict[special_token[0]])
     return encoded_list
 
@@ -67,7 +75,7 @@ def main():
         text = f.read()
 
     
-    text = text[:500]
+    #text = text[:500]
     input_text = input("Enter your text: ")
 
     text_list = text.split()
@@ -85,10 +93,10 @@ def main():
     token_list = collapse_nested_list(token_list)
     for i in range(len(special_token)):
         token_list.insert(i, special_token[i])
-
-    token_list = rm_duplicates(token_list)
+    start = time.perf_counter()
+    token_list = list(dict.fromkeys(token_list))
     
-
+    print("took", time.perf_counter() - start, "seconds")
     for i in range(len(token_list)):
         token_number.append(i)
     for i, token in enumerate(special_token):
@@ -97,10 +105,12 @@ def main():
 
     for i in range(len(token_list)):
         encoder_tokenizer[token_list[i]] = token_number[i]
-    print(encoder_tokenizer)
+    #print(encoder_tokenizer)
 
     decoder_tokenizer = dict((v, k) for k, v in encoder_tokenizer.items())
+
     input_splitter = text_splice(input_splitter)
+    input_splitter = adds_encoder_spacer(input_splitter)
     print(input_splitter)
     input_splitter = collapse_nested_list(input_splitter)
     print(input_splitter)
@@ -113,7 +123,8 @@ def main():
     print("UNK: ", special_token.index("<unk>"))
 
     input_token = decoder(input_token, decoder_tokenizer)
-    print(" ".join(input_token))
+    input_token = decoder_rm_spacer(' '.join(input_token))
+    print(input_token)
 
 
 if __name__ == '__main__':
