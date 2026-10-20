@@ -24,8 +24,7 @@ def text_splice(text: list):
         for letter in t:
                 if letter.lower() in special:
                     if w != '':
-                        text_list.append(w)
-                        text_list.append("<spc>" + letter)
+                        text_list.append(w)                      
                     text_list.append(letter)
                     w = ''
                 elif letter.lower() in alphabet and w != '-':
@@ -44,6 +43,24 @@ def rm_duplicates(list: list):
                     temp_list[j] = ''
     temp_list = [t for t in temp_list if t != '']
     return temp_list
+
+def special_formating(list: list):
+    for word in list:
+        special_word = []
+        for i, letter in enumerate(word):
+            if letter not in special:
+                special_word.append(letter)
+            else:
+                if i > 0:
+                        letter = "<spc>" + letter
+                if i < len(word) - 1:
+                        letter += "<spc>"
+                special_word.append(letter)
+        print(''.join(special_word))    
+
+
+  
+                
 
 def encoder(list: list, dict: dict, length: int):
     encoded_list = []
@@ -84,7 +101,7 @@ for i in range(len(token_dict)):
     
 
 decoder_tokenizer = dict((v, k) for k, v in encoder_tokenizer.items())
-
+preb = input_splitter
 input_splitter = text_splice(input_splitter)
 print(" ".join(input_splitter))
 
@@ -95,5 +112,7 @@ print("UNK: ", len(token_dict))
 
 input_token = decoder(input_token, decoder_tokenizer, len(token_dict))
 print(" ".join(input_token))
+
+special_formating(preb)
 #print("encoder: ", encoder_tokenizer)
 #print("decoder: ", decoder_tokenizer)
