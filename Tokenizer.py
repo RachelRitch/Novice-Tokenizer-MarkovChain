@@ -1,24 +1,28 @@
 
-special = ("! ( ) - [ ] { } ; : \' \" — \u2014 \u201c \u2019 , < > . / ? @ # $ % ^ & * _ ~")
+symbols = ("! ( ) - [ ] { } ; : \' \" — , < > . / ? @ # $ % ^ & * _ ~")
 alphabet = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
+special_token = ["<unk>", "<spc>"]
 
 def text_splice(text: list):
     text_list = [] 
     for t in text:
-        w = ''
-        text_nest = []
+        word = ''
+        nested_text_list = []
         for letter in t:
-            if letter.lower() in special:
-                if w != '':
-                    text_nest.append(w)                      
-                text_nest.append(letter)
-                w = ''
-            elif letter.lower() in alphabet and w != '-':
-                w += letter
-        if w != '':
-            text_nest.append(w)
-        text_list.append(text_nest)
+            if letter.lower() in symbols:
+                if word != '':
+                    nested_text_list.append(word)                      
+                nested_text_list.append(letter)
+                word = ''
+            elif letter.lower() in alphabet and word != '-':
+                word += letter
+        if word != '':
+            nested_text_list.append(word)
+        text_list.append(nested_text_list)
     return text_list
+
+def special_token_insert(token_list: list, special_token_list: list):
+    return
 
 def rm_duplicates(training_list: list):
     for i in range(len(training_list)):
@@ -30,26 +34,26 @@ def rm_duplicates(training_list: list):
     training_list = [t for t in training_list if t != '']
     return training_list
 
-def encoder(list: list, dict: dict, length: int):
+def encoder(list: list, dict: dict):
     encoded_list = []
     for word in list[:]:
         if word in dict:
             encoded_list.append(dict[word])
         else:
-            encoded_list.append(length)
+            encoded_list.append(dict[special_token[0]])
     return encoded_list
 
-def decoder(list: list, dict: dict, length: int):
+def decoder(list: list, dict: dict):
     decoded_list = []
     for i in list[:]:
         if i in dict:
             decoded_list.append(dict[i])
-        elif i == length:
-            decoded_list.append('<unk>')
+        else:
+            decoded_list.append(dict[special_token.index('<unk>')])
     return decoded_list
 
-def heat_map(list: list):
-    None
+def heat_map(token_list: list):
+    return
 
 def collapse_nested_list(nested: list):
     flat = []
@@ -64,35 +68,36 @@ def main():
 
     
     text = text[:500]
-    #text = "the abc is a test."
     input_text = input("Enter your text: ")
 
-    word_list = text.split()
+    text_list = text.split()
     input_splitter = input_text.split()
 
     token_list = []
     token_number = []
-    encoder_tokenizer = {}
-    decoder_tokenizer = {}
     input_token = []
 
-    token_list = text_splice(word_list)
-    #print("Token Dict: ", token_list)
+    encoder_tokenizer = {}
+    decoder_tokenizer = {}
+   
+
+    token_list = text_splice(text_list)
     token_list = collapse_nested_list(token_list)
+    for i in range(len(special_token)):
+        token_list.insert(i, special_token[i])
+
     token_list = rm_duplicates(token_list)
-    #print("Token Dict after remove_dup: ", token_list)
+    
 
     for i in range(len(token_list)):
         token_number.append(i)
-
-    #print(token_number)
-    #print(len(token_number))
-    encoder_tokenizer["<unk>"] = (len(token_list))
-    decoder_tokenizer[(len(token_list))] = "<unk>"
+    for i, token in enumerate(special_token):
+        encoder_tokenizer[special_token[i]] = special_token.index(token)
+        decoder_tokenizer[special_token.index(token)] = special_token[i]
 
     for i in range(len(token_list)):
         encoder_tokenizer[token_list[i]] = token_number[i]
-
+    print(encoder_tokenizer)
 
     decoder_tokenizer = dict((v, k) for k, v in encoder_tokenizer.items())
     input_splitter = text_splice(input_splitter)
@@ -102,17 +107,14 @@ def main():
     print(" ".join(input_splitter))
 
 
-    input_token = encoder(input_splitter, encoder_tokenizer, len(token_list))
+    input_token = encoder(input_splitter, encoder_tokenizer)
 
     print(" ".join(str(t) for t in input_token))
-    print("UNK: ", len(token_list))
+    print("UNK: ", special_token.index("<unk>"))
 
-    input_token = decoder(input_token, decoder_tokenizer, len(token_list))
+    input_token = decoder(input_token, decoder_tokenizer)
     print(" ".join(input_token))
 
-
-    #print("encoder: ", encoder_tokenizer)
-    #print("decoder: ", decoder_tokenizer)
 
 if __name__ == '__main__':
     main()
