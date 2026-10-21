@@ -1,7 +1,20 @@
 import time
+import numpy as np
+import pandas as pd
+
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+
+import seaborn as sns
+import seaborn.objects as so
+
+from pathlib import Path
+from collections import Counter
+#from datasets import load_dataset
 
 symbols = ["!", "(", ")", "-", "[", "]", "{", "}", ";", ":", "\'", "\"", "—", ",", "<", ">", ".", "/", "?", "@", "#", "$", "%", "^", "&", "*", "_", "~"]
 alphabet = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
+number = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0']
 special_token = ["<unk>", "<spc>"]
 
 def text_splice(text: list):
@@ -15,7 +28,7 @@ def text_splice(text: list):
                     nested_text_list.append(word)                      
                 nested_text_list.append(letter)
                 word = ''
-            elif letter.lower() in alphabet and word != '-':
+            elif letter.lower() in alphabet and word != '-' or letter in number and word != '-':
                 word += letter
         if word != '':
             nested_text_list.append(word)
@@ -39,8 +52,6 @@ def decoder_rm_spacer(output_text: str):
         output_text = output_text.replace(f' {special_str} ', '')
     return output_text
 
-def special_token_insert(token_list: list, special_token_list: list):
-    return
 
 def encoder(list: list, dict: dict):
     encoded_list = []
@@ -61,7 +72,42 @@ def decoder(list: list, dict: dict):
     return decoded_list
 
 def heat_map(token_list: list):
-    return
+    #ns.set_theme()
+    dataset_values = {}
+    counts = Counter()
+    for j in range(len(token_list) - 1):
+        chart = token_list[j : j + 3]
+        counts[tuple(chart)] += 1
+    top = counts
+    #print(top)
+    fig, ax = plt.subplots(figsize=(8, 4))
+    for label, value in top.items():
+        sample = []
+        prediction = []
+        for i, s in enumerate(label):
+            if i == 2:
+                prediction.append(s)
+            else:
+                sample.append(s)
+        #print(type(sample), sample, type(prediction), prediction, value)
+        if prediction != []:
+            if (sample[0], sample[1]) not in dataset_values:
+                dataset_values[sample[0], sample[1]] = {}
+            dataset_values[sample[0], sample[1]][prediction[0]] = dataset_values[sample[0], sample[1]].get(prediction[0], 0) + float(value)
+
+
+    #print(dataset_values)
+    pairs = sorted(dataset_values, key=lambda p: len(dataset_values[p]), reverse=True)[:15]
+    small = {}
+    for p in pairs:
+        top_words = sorted(dataset_values[p].items(), key=lambda x: x[1], reverse=True)[:15]
+        small[" ".join(p)] = dict(top_words)
+    df = pd.DataFrame.from_dict(small, orient="index").fillna(0)
+    df = df.div(df.sum(axis=1), axis=0)
+    sns.heatmap(df, annot=False, xticklabels=True, fmt=".2f", cmap="viridis")
+    plt.tight_layout()
+    plt.show()
+
 
 def collapse_nested_list(nested: list):
     flat = []
@@ -70,12 +116,23 @@ def collapse_nested_list(nested: list):
             flat.append(token)
     return flat
 
-def main():
-    with open("aliceinwonderland.txt", encoding="utf-8") as f:
-        text = f.read()
+def openlibrary():
+    text = ''
+    for path in Path('Books').glob('*.txt'):
+        with open(f'Books/{path.name}' , encoding='utf-8-sig') as f:
+            text += f.read()
+    return text
 
+def main():
+    #stories = load_dataset("roneneldan/TinyStories", split="train[:1%]")
+    #story_list = stories["text"]
+
+    books_list = []
+    text = openlibrary()
+    #text += ''.join(story_list)
+    text += ''.join(symbols)
     
-    #text = text[:500]
+    #text = text[:10000]
     input_text = input("Enter your text: ")
 
     text_list = text.split()
@@ -91,12 +148,13 @@ def main():
 
     token_list = text_splice(text_list)
     token_list = collapse_nested_list(token_list)
+    heat_map(token_list)
     for i in range(len(special_token)):
         token_list.insert(i, special_token[i])
     start = time.perf_counter()
     token_list = list(dict.fromkeys(token_list))
     
-    print("took", time.perf_counter() - start, "seconds")
+    print("Removing duplicates took: ", time.perf_counter() - start, "seconds")
     for i in range(len(token_list)):
         token_number.append(i)
     for i, token in enumerate(special_token):
