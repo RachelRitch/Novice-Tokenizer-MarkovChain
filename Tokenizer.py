@@ -10,7 +10,7 @@ import seaborn.objects as so
 
 from pathlib import Path
 from collections import Counter
-#from datasets import load_dataset
+from datasets import load_dataset
 
 symbols = ["!", "(", ")", "-", "[", "]", "{", "}", ";", ":", "\'", "\"", "—", ",", "<", ">", ".", "/", "?", "@", "#", "$", "%", "^", "&", "*", "_", "~"]
 alphabet = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
@@ -95,18 +95,19 @@ def heat_map(token_list: list):
                 dataset_values[sample[0], sample[1]] = {}
             dataset_values[sample[0], sample[1]][prediction[0]] = dataset_values[sample[0], sample[1]].get(prediction[0], 0) + float(value)
 
-
-    #print(dataset_values)
-    pairs = sorted(dataset_values, key=lambda p: len(dataset_values[p]), reverse=True)[:15]
-    small = {}
-    for p in pairs:
-        top_words = sorted(dataset_values[p].items(), key=lambda x: x[1], reverse=True)[:15]
-        small[" ".join(p)] = dict(top_words)
-    df = pd.DataFrame.from_dict(small, orient="index").fillna(0)
-    df = df.div(df.sum(axis=1), axis=0)
-    sns.heatmap(df, annot=False, xticklabels=True, fmt=".2f", cmap="viridis")
-    plt.tight_layout()
-    plt.show()
+    
+    # pairs = sorted(dataset_values, key=lambda p: len(dataset_values[p]), reverse=True)[:10]
+    # small = {}
+    # for p in pairs:
+    #     top_words = sorted(dataset_values[p].items(), key=lambda x: x[1], reverse=True)[:10]
+    #     small[" ".join(p)] = dict(top_words)
+    # df = pd.DataFrame.from_dict(small, orient="index").fillna(0)
+    # df = df.div(df.sum(axis=1), axis=0)
+    # sns.heatmap(df, annot=False, xticklabels=True, fmt=".2f", cmap="viridis")
+    # plt.tight_layout()
+    # plt.show()
+    
+    return dataset_values
 
 
 def collapse_nested_list(nested: list):
@@ -123,13 +124,21 @@ def openlibrary():
             text += f.read()
     return text
 
+def markov_chain(predictive_data_set: dict, input: list):
+    t = 1.0
+    str1 = 'of'
+    str2 = 'the'
+    if predictive_data_set[str1, str2] != []:
+        str3_data = predictive_data_set[str1, str2]
+        print(str3_data)
+
 def main():
-    #stories = load_dataset("roneneldan/TinyStories", split="train[:1%]")
-    #story_list = stories["text"]
+    stories = load_dataset("roneneldan/TinyStories", split="train[:1%]")
+    story_list = stories["text"]
 
     books_list = []
     text = openlibrary()
-    #text += ''.join(story_list)
+    text += ''.join(story_list)
     text += ''.join(symbols)
     
     #text = text[:10000]
@@ -148,7 +157,8 @@ def main():
 
     token_list = text_splice(text_list)
     token_list = collapse_nested_list(token_list)
-    heat_map(token_list)
+    predictive_data_set = heat_map(token_list)
+    markov_chain(predictive_data_set, input_splitter)
     for i in range(len(special_token)):
         token_list.insert(i, special_token[i])
     start = time.perf_counter()
