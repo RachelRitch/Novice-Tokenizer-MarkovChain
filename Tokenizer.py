@@ -1,4 +1,5 @@
 import time
+import random
 import numpy as np
 import pandas as pd
 
@@ -17,7 +18,7 @@ alphabet = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n'
 number = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0']
 special_token = ["<unk>", "<spc>"]
 
-def text_splice(text: list):
+def text_splice(text):
     text_list = [] 
     for t in text:
         word = ''
@@ -96,16 +97,16 @@ def heat_map(token_list: list):
             dataset_values[sample[0], sample[1]][prediction[0]] = dataset_values[sample[0], sample[1]].get(prediction[0], 0) + float(value)
 
     
-    # pairs = sorted(dataset_values, key=lambda p: len(dataset_values[p]), reverse=True)[:10]
-    # small = {}
-    # for p in pairs:
-    #     top_words = sorted(dataset_values[p].items(), key=lambda x: x[1], reverse=True)[:10]
-    #     small[" ".join(p)] = dict(top_words)
-    # df = pd.DataFrame.from_dict(small, orient="index").fillna(0)
-    # df = df.div(df.sum(axis=1), axis=0)
-    # sns.heatmap(df, annot=False, xticklabels=True, fmt=".2f", cmap="viridis")
-    # plt.tight_layout()
-    # plt.show()
+    pairs = sorted(dataset_values, key=lambda p: len(dataset_values[p]), reverse=True)[:10]
+    small = {}
+    for p in pairs:
+        top_words = sorted(dataset_values[p].items(), key=lambda x: x[1], reverse=True)[:10]
+        small[" ".join(p)] = dict(top_words)
+    df = pd.DataFrame.from_dict(small, orient="index").fillna(0)
+    df = df.div(df.sum(axis=1), axis=0)
+    sns.heatmap(df, annot=False, xticklabels=True, fmt=".2f", cmap="viridis")
+    plt.tight_layout()
+    plt.show()
     
     return dataset_values
 
@@ -124,13 +125,28 @@ def openlibrary():
             text += f.read()
     return text
 
-def markov_chain(predictive_data_set: dict, input: list):
-    t = 1.0
-    str1 = 'of'
-    str2 = 'the'
-    if predictive_data_set[str1, str2] != []:
-        str3_data = predictive_data_set[str1, str2]
-        print(str3_data)
+def markov_chain(predictive_data_set: dict, input_txt: list, loops: int, temp: float):
+    t = temp
+    sentence_str = ''
+    list_words = ['of', 'the', '']
+    if input_txt[1] != '':
+        list_words[0] = input_txt[len(input_txt) -2] 
+        list_words[1] = input_txt[len(input_txt) -1] 
+        #print(list_words[0], list_words[1])
+        for _ in range(loops):
+            if predictive_data_set[list_words[0], list_words[1]] != []:
+                str3_data = predictive_data_set[(list_words[0], list_words[1])]
+                #print(str3_data)
+                str3_word = list(str3_data.keys())
+                str3_weights = list(str3_data.values())
+                for i in range(len(str3_data)):
+                    str3_weights[i] = str3_weights[i]**(1/t)
+                pick = random.choices(str3_word, weights=str3_weights)[0]
+                list_words[0] = list_words[1] 
+                list_words[1] = pick
+                sentence_str += ''.join(f' {pick}')
+        return sentence_str
+
 
 def main():
     stories = load_dataset("roneneldan/TinyStories", split="train[:1%]")
@@ -142,7 +158,9 @@ def main():
     text += ''.join(symbols)
     
     #text = text[:10000]
-    input_text = input("Enter your text: ")
+    input_text = input("Enter two words: ")
+    input_loops = int(input("Words: "))
+    input_temp = float(input("Temperature: "))
 
     text_list = text.split()
     input_splitter = input_text.split()
@@ -158,7 +176,7 @@ def main():
     token_list = text_splice(text_list)
     token_list = collapse_nested_list(token_list)
     predictive_data_set = heat_map(token_list)
-    markov_chain(predictive_data_set, input_splitter)
+    output_text = markov_chain(predictive_data_set, input_splitter, input_loops, input_temp)
     for i in range(len(special_token)):
         token_list.insert(i, special_token[i])
     start = time.perf_counter()
@@ -193,7 +211,7 @@ def main():
     input_token = decoder(input_token, decoder_tokenizer)
     input_token = decoder_rm_spacer(' '.join(input_token))
     print(input_token)
-
+    print(input_text + ' ' + str(output_text))
 
 if __name__ == '__main__':
     main()
